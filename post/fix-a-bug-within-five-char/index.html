@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>改 5 个字符修了一个 bug | BeyondPN</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://beyondpn.github.io/favicon.ico?v=1583082461795">
+<link rel="stylesheet" href="https://beyondpn.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="公司决定赌一把，把所有项目组撤销合并到《石器时代》里，毕竟腾讯发行，希望很大。石器的代码源自新仙剑，是 c# 和 c++ 编写的。当时我在上家公司做平台的时候，奎斌写了服务器的第一版，依然怀念每天一起去华师大吃饭扯皮的日子。
+之后几经辗转，..." />
+    <meta name="keywords" content="" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://beyondpn.github.io">
+        <img src="https://beyondpn.github.io/images/avatar.png?v=1583082461795" class="site-logo">
+        <h1 class="site-title">BeyondPN</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+          <a class="social-link" href="https://github.com/beyondpn" target="_blank">
+            <i class="fab fa-github"></i>
+          </a>
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      BE REAL, BE FREE
+    </div>
+    <div class="site-footer">
+      Talk is cheap, show me the code. | <a class="rss" href="https://beyondpn.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">改 5 个字符修了一个 bug</h2>
+            <div class="post-date">2016-11-26</div>
+            
+            <div class="post-content" v-pre>
+              <p>公司决定赌一把，把所有项目组撤销合并到《石器时代》里，毕竟腾讯发行，希望很大。石器的代码源自新仙剑，是 c# 和 c++ 编写的。当时我在上家公司做平台的时候，奎斌写了服务器的第一版，依然怀念每天一起去华师大吃饭扯皮的日子。</p>
+<p>之后几经辗转，换了几批人，这些满是补丁的代码成了石器的服务端基础代码。代码年久失修，所以前段时间他们决定用 netty 重写网关，我加入的时候这个新版网关正在测试。测试反馈了一个 bug，压力测试环境中，机器人全部杀掉之后，有部分机器人没有下线。我相对清闲，又是公司第一个用 netty 写服务端的，于是去解决这个 bug。从表现看，正常下线和不正常下线的机器人都有，比较符合并发 bug 的表现，于是去翻代码，特别注意有并发的部分。</p>
+<p>机器人下线的代码是这么写的。</p>
+<pre><code class="language-java">public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        DisconnectMessage disconnect = new DisconnectMessage(); 
+        //... other code queue.offerMessage(disconnect); 
+} 
+</code></pre>
+<p>queue 部分的代码是这样的</p>
+<pre><code class="language-java">private ReadWriteLock rwLock = new ReetrantReadWriteLock();
+
+public boolean offerMessage(Message msg) { 、
+    Lock l = rwLock.readLock(); // bug is here 
+    l.lock(); 
+    try { 
+        queue.offer(msg); 
+    } finally { 
+        l.unlock(); 
+    } 
+}
+
+public Queue getMessageQueue() { 
+    if(queue.isEmpty()) { 
+        return null; 
+    } 
+    Queue rtn = new LinkedList&lt;&gt;();
+    Lock l = rwLock.writeLock(); 
+    l.lock(); 
+    try { 
+        rtn.addAll(queue); 
+        queue.clear(); 
+    } finally { 
+        l.unlock(); 
+    } 
+    return rtn; 
+} 
+</code></pre>
+<p>bug 找到了，跟预期一直，并发问题。写这段代码的人不熟悉 java 的锁又没有仔细看文档，写出了 bug 代码，简单修改下，把 readLock 改成 writeLock 就可以了。修改 5 个字符，改掉一个 bug，感觉还是很爽的。</p>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://beyondpn.github.io/post/health-care/">
+                  <h3 class="post-title">
+                    也谈谈医疗改革
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+
+
+  </body>
+</html>
