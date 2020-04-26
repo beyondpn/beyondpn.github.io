@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://beyondpn.github.io</id>
     <title>BeyondPN</title>
-    <updated>2020-03-02T17:07:15.147Z</updated>
+    <updated>2020-04-26T12:49:53.038Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://beyondpn.github.io"/>
     <link rel="self" href="https://beyondpn.github.io/atom.xml"/>
@@ -10,6 +10,94 @@
     <logo>https://beyondpn.github.io/images/avatar.png</logo>
     <icon>https://beyondpn.github.io/favicon.ico</icon>
     <rights>All rights reserved 2020, BeyondPN</rights>
+    <entry>
+        <title type="html"><![CDATA[说说 ThreadLocal]]></title>
+        <id>https://beyondpn.github.io/post/threadlocal/</id>
+        <link href="https://beyondpn.github.io/post/threadlocal/">
+        </link>
+        <updated>2020-04-26T12:46:39.000Z</updated>
+        <content type="html"><![CDATA[<p>前两天看同事的代码，同事提了一句说</p>
+<blockquote>
+<p>ThreadLocal 的 map 的 Entry 是 WeakReference，所以会出现 ThreadLocal 对象被 GC 释放的问题，故他在代码中使用 ThreadLocal 时考虑了这个情况，不会出现问题。</p>
+</blockquote>
+<p>闻之大惊，因为我这么多年使用 ThreadLocal 从未考虑过这种情况，细一考量会发现如果真是这样的话，ThreadLocal 的使用场景就几乎不太存在了。直觉上感觉应该是他哪里理解错了。</p>
+<p>今天有时间，就深究了一下这个问题。</p>
+<p><strong>先说结论，上面的说法确实理解有误，按照编码建议将 ThreadLocal 对象声明为 <code>static</code> 的，正常使用 ThreadLocal 即可。</strong></p>
+<hr>
+<p>以下是探究过程。</p>
+<p>首先写了一个例子：</p>
+<pre><code class="language-java">public class ThreadLocalTest {
+
+    private static final ThreadLocal&lt;Map&lt;String, String&gt;&gt; holder = ThreadLocal.withInitial(HashMap::new);
+    private static final List&lt;ThreadLocal&lt;Integer&gt;&gt; holderList = new ArrayList&lt;&gt;();
+
+    public static void main(String[] args) {
+        init(10000, 10000);
+        gc();
+        initHolders(10000);
+        gc();
+        System.out.println(holder.get().size());
+        checkHolderList();
+    }
+
+    private static void gc() {
+        System.out.println(&quot;gc goes here ...&quot;);
+        System.gc();
+    }
+
+    private static void init(int size, int valueLength) {
+        for (int i = 0; i &lt; size; i++) {
+            holder.get().put(String.valueOf(i), RandomStringUtils.random(valueLength));
+        }
+    }
+
+    private static void initHolders(int size) {
+        for (int i = 0; i &lt; size; i++) {
+            ThreadLocal&lt;Integer&gt; holder = new ThreadLocal&lt;&gt;();
+            holderList.add(holder);
+            holder.set(i);
+        }
+    }
+
+    private static void checkHolderList() {
+        System.out.println(holderList.size());
+        for (int i = 0; i &lt; holderList.size(); i++) {
+            if (holderList.get(i).get() != i) {
+                throw new RuntimeException(&quot;check failed&quot;);
+            }
+        }
+        System.out.println(&quot;check success&quot;);
+    }
+}
+
+//java ThreadLocalTest -verbose:gc
+</code></pre>
+<p>运行后未发现任何问题，如果将 ThreadLocal 换成 WeakReference，则测试无法运行。</p>
+<p>那是什么原因导致的呢？看代码。</p>
+<p>同事说的 ThreadLocal 中 Entry 为 WeakReference 的代码如下：</p>
+<pre><code class="language-java">// TheadLocal.ThreadLocalMap.Entry
+/**
+         * The entries in this hash map extend WeakReference, using
+         * its main ref field as the key (which is always a
+         * ThreadLocal object).  Note that null keys (i.e. entry.get()
+         * == null) mean that the key is no longer referenced, so the
+         * entry can be expunged from table.  Such entries are referred to
+         * as &quot;stale entries&quot; in the code that follows.
+         */
+        static class Entry extends WeakReference&lt;ThreadLocal&lt;?&gt;&gt; {
+            /** The value associated with this ThreadLocal. */
+            Object value;
+
+            Entry(ThreadLocal&lt;?&gt; k, Object v) {
+                super(k);
+                value = v;
+            }
+        }
+</code></pre>
+<p>这里要注意，WeakReference 引用的对象是 ThreadLocal，也就是说只要你保持对 ThreadLocal 对象的引用，就不会被清除掉。而这里使用 WeakReference 的原因，也写的很清除了，主要是避免在 ThreadLocal 对象被清理的情况下发生内存泄漏。如果 ThreadLocal 对象被清理了，Thread 的成员变量 <code>ThreadLocal.ThreadLocalMap threadLocals</code> 会在 gc 时清理掉这些对象，避免内存泄漏。</p>
+<p>另外，jdk 的实现中 ThreadLocal 设计为由 <code>Thread</code> 持有以 <code>ThreadLocal</code>为 key 的 <code>ThreadLocalMap</code> ，而不是由 <code>ThreadLocal</code> 对象持有以 <code>Thread</code> 为 key 的 <code>ThreadLocalMap</code> 也是处于避免内存泄漏的考虑。因为大部分情况下 Thread 的生命周期会短于 <code>ThreadLocal</code> 的生命周期。</p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[改 5 个字符修了一个 bug]]></title>
         <id>https://beyondpn.github.io/post/fix-a-bug-within-five-char/</id>
