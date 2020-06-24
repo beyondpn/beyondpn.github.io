@@ -1,0 +1,214 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>数据库连接的重连 | BeyondPN</title>
+<link rel="shortcut icon" href="http://localhost:4000/favicon.ico?v=1592997904415">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="http://localhost:4000/styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="数据库连接的重连 | BeyondPN - Atom Feed" href="http://localhost:4000/atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+
+
+
+    <meta name="description" content="每次项目上线前都必然会确认下数据库，redis 的断线重连机制，由于事关重大，每次都要查询资料，浪费了很多时间。这次查询后在这里记录一下，作为一个检查表，避免下次再麻烦。
+
+MySQL 的断线重连
+MySQL 的 jdbc 连接字符串支持配..." />
+    <meta name="keywords" content="" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+    <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="http://localhost:4000">
+  <img class="avatar" src="http://localhost:4000/images/avatar.png?v=1592997904415" alt="">
+  </a>
+  <h1 class="site-title">
+    BeyondPN
+  </h1>
+  <p class="site-description">
+    BE REAL, BE FREE
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              数据库连接的重连
+            </h2>
+            <div class="post-info">
+              <span>
+                2020-06-24
+              </span>
+              <span>
+                3 min read
+              </span>
+              
+            </div>
+            
+            <div class="post-content-wrapper">
+              <div class="post-content">
+                <p>每次项目上线前都必然会确认下数据库，redis 的断线重连机制，由于事关重大，每次都要查询资料，浪费了很多时间。这次查询后在这里记录一下，作为一个检查表，避免下次再麻烦。</p>
+<h2 id="-more-"><!-- more --></h2>
+<h3 id="mysql-的断线重连">MySQL 的断线重连</h3>
+<p>MySQL 的 jdbc 连接字符串支持配置断线重连 <code>autoReconnect=true</code>，但是这种配置方式并不推荐，因为有副作用，文档节选如下：</p>
+<blockquote>
+<p><strong>autoReconnect</strong></p>
+<p>Should the driver try to re-establish stale and/or dead connections? If enabled the driver will throw an exception for a queries issued on a stale or dead connection, which belong to the current transaction, but will attempt reconnect before the next query issued on the connection in a new transaction. The use of this feature is not recommended, because it has side effects related to session state and data consistency when applications don't handle SQLExceptions properly, and is only designed to be used when you are unable to configure your application to handle SQLExceptions resulting from dead and stale connections properly. Alternatively, as a last option, investigate setting the MySQL server variable &quot;wait_timeout&quot; to a high value, rather than the default of 8 hours.</p>
+<p>Default: false</p>
+<p>https://dev.mysql.com/doc/connector-j/5.1/en/connector-j-reference-configuration-properties.html</p>
+</blockquote>
+<p>所以，MySQL 的断线重连使用连接池的相关配置实现，我查看了 Alibaba Druid 和 Hikari 的配置，大同小异，即通过配置一个检测 SQL 来判断连接是否有效，如无效，则从连接池剔除。所谓重连只是从连接池 borrow 时重新创建一个连接即可。</p>
+<p>配合 testWhileIdle 检测空闲连接的可用性，避免 MySQL 服务器端超时导致报错。</p>
+<p>Druid 配置：</p>
+<pre><code class="language-xml">    &lt;property name=&quot;druid.validationQuery&quot; value=&quot;SELECT 'x'&quot;/&gt;
+    &lt;property name=&quot;druid.testWhileIdle&quot; value=&quot;true&quot;/&gt;
+    &lt;property name=&quot;druid.testOnBorrow&quot; value=&quot;false&quot;/&gt;
+    &lt;property name=&quot;druid.testOnReturn&quot; value=&quot;false&quot;/&gt;
+</code></pre>
+<p>Spring Boot 配置：</p>
+<pre><code class="language-properties">    spring.datasource.testWhileIdle = true
+    spring.datasource.timeBetweenEvictionRunsMillis = 60000
+    spring.datasource.validationQuery = SELECT 1
+</code></pre>
+<hr>
+<h3 id="redis-的断线重连">Redis 的断线重连</h3>
+<p>项目使用的客户端时 lettuce，直接在代码里设置重连即可。默认重连间隔从1秒开始翻倍延长，最大30秒。</p>
+<pre><code class="language-java">client.setOptions(ClientOptions.builder()
+                .autoReconnect(true)
+                .socketOptions(SocketOptions.builder()
+                        .keepAlive(true)
+                        .tcpNoDelay(true)
+                        .build()
+                )
+                .build());
+</code></pre>
+
+              </div>
+              <div class="toc-container">
+                <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li><a href="#-more-"><!-- more --></a>
+<ul>
+<li><a href="#mysql-%E7%9A%84%E6%96%AD%E7%BA%BF%E9%87%8D%E8%BF%9E">MySQL 的断线重连</a></li>
+<li><a href="#redis-%E7%9A%84%E6%96%AD%E7%BA%BF%E9%87%8D%E8%BF%9E">Redis 的断线重连</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+              </div>
+            </div>
+          </article>
+        </div>
+
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="http://localhost:4000/post/threadlocal/">
+              <h3 class="post-title">
+                说说 ThreadLocal
+              </h3>
+            </a>
+          </div>
+        
+
+        
+
+        <div class="site-footer">
+  Talk is cheap, show me the code.
+  <a class="rss" href="http://localhost:4000/atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
+      </div>
+    </div>
+
+    <script>
+      hljs.initHighlightingOnLoad()
+
+      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+      // This should probably be throttled.
+      // Especially because it triggers during smooth scrolling.
+      // https://lodash.com/docs/4.17.10#throttle
+      // You could do like...
+      // window.addEventListener("scroll", () => {
+      //    _.throttle(doThatStuff, 100);
+      // });
+      // Only not doing it here to keep this Pen dependency-free.
+
+      window.addEventListener("scroll", event => {
+        let fromTop = window.scrollY;
+
+        mainNavLinks.forEach((link, index) => {
+          let section = document.getElementById(decodeURI(link.hash).substring(1));
+          let nextSection = null
+          if (mainNavLinks[index + 1]) {
+            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+          }
+          if (section.offsetTop <= fromTop) {
+            if (nextSection) {
+              if (nextSection.offsetTop > fromTop) {
+                link.classList.add("current");
+              } else {
+                link.classList.remove("current");    
+              }
+            } else {
+              link.classList.add("current");
+            }
+          } else {
+            link.classList.remove("current");
+          }
+        });
+      });
+
+    </script>
+  </body>
+</html>

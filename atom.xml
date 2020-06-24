@@ -1,22 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-    <id>https://beyondpn.github.io</id>
+    <id>http://localhost:4000</id>
     <title>BeyondPN</title>
-    <updated>2020-04-26T12:49:53.038Z</updated>
+    <updated>2020-06-24T11:27:37.799Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
-    <link rel="alternate" href="https://beyondpn.github.io"/>
-    <link rel="self" href="https://beyondpn.github.io/atom.xml"/>
+    <link rel="alternate" href="http://localhost:4000"/>
+    <link rel="self" href="http://localhost:4000/atom.xml"/>
     <subtitle>BE REAL, BE FREE</subtitle>
-    <logo>https://beyondpn.github.io/images/avatar.png</logo>
-    <icon>https://beyondpn.github.io/favicon.ico</icon>
+    <logo>http://localhost:4000/images/avatar.png</logo>
+    <icon>http://localhost:4000/favicon.ico</icon>
     <rights>All rights reserved 2020, BeyondPN</rights>
     <entry>
+        <title type="html"><![CDATA[数据库连接的重连]]></title>
+        <id>http://localhost:4000/post/reconnect_config/</id>
+        <link href="http://localhost:4000/post/reconnect_config/">
+        </link>
+        <updated>2020-06-24T10:05:26.000Z</updated>
+        <summary type="html"><![CDATA[<p>每次项目上线前都必然会确认下数据库，redis 的断线重连机制，由于事关重大，每次都要查询资料，浪费了很多时间。这次查询后在这里记录一下，作为一个检查表，避免下次再麻烦。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>每次项目上线前都必然会确认下数据库，redis 的断线重连机制，由于事关重大，每次都要查询资料，浪费了很多时间。这次查询后在这里记录一下，作为一个检查表，避免下次再麻烦。</p>
+<h2 id="-more-"><!-- more --></h2>
+<h3 id="mysql-的断线重连">MySQL 的断线重连</h3>
+<p>MySQL 的 jdbc 连接字符串支持配置断线重连 <code>autoReconnect=true</code>，但是这种配置方式并不推荐，因为有副作用，文档节选如下：</p>
+<blockquote>
+<p><strong>autoReconnect</strong></p>
+<p>Should the driver try to re-establish stale and/or dead connections? If enabled the driver will throw an exception for a queries issued on a stale or dead connection, which belong to the current transaction, but will attempt reconnect before the next query issued on the connection in a new transaction. The use of this feature is not recommended, because it has side effects related to session state and data consistency when applications don't handle SQLExceptions properly, and is only designed to be used when you are unable to configure your application to handle SQLExceptions resulting from dead and stale connections properly. Alternatively, as a last option, investigate setting the MySQL server variable &quot;wait_timeout&quot; to a high value, rather than the default of 8 hours.</p>
+<p>Default: false</p>
+<p>https://dev.mysql.com/doc/connector-j/5.1/en/connector-j-reference-configuration-properties.html</p>
+</blockquote>
+<p>所以，MySQL 的断线重连使用连接池的相关配置实现，我查看了 Alibaba Druid 和 Hikari 的配置，大同小异，即通过配置一个检测 SQL 来判断连接是否有效，如无效，则从连接池剔除。所谓重连只是从连接池 borrow 时重新创建一个连接即可。</p>
+<p>配合 testWhileIdle 检测空闲连接的可用性，避免 MySQL 服务器端超时导致报错。</p>
+<p>Druid 配置：</p>
+<pre><code class="language-xml">    &lt;property name=&quot;druid.validationQuery&quot; value=&quot;SELECT 'x'&quot;/&gt;
+    &lt;property name=&quot;druid.testWhileIdle&quot; value=&quot;true&quot;/&gt;
+    &lt;property name=&quot;druid.testOnBorrow&quot; value=&quot;false&quot;/&gt;
+    &lt;property name=&quot;druid.testOnReturn&quot; value=&quot;false&quot;/&gt;
+</code></pre>
+<p>Spring Boot 配置：</p>
+<pre><code class="language-properties">    spring.datasource.testWhileIdle = true
+    spring.datasource.timeBetweenEvictionRunsMillis = 60000
+    spring.datasource.validationQuery = SELECT 1
+</code></pre>
+<hr>
+<h3 id="redis-的断线重连">Redis 的断线重连</h3>
+<p>项目使用的客户端时 lettuce，直接在代码里设置重连即可。默认重连间隔从1秒开始翻倍延长，最大30秒。</p>
+<pre><code class="language-java">client.setOptions(ClientOptions.builder()
+                .autoReconnect(true)
+                .socketOptions(SocketOptions.builder()
+                        .keepAlive(true)
+                        .tcpNoDelay(true)
+                        .build()
+                )
+                .build());
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
         <title type="html"><![CDATA[说说 ThreadLocal]]></title>
-        <id>https://beyondpn.github.io/post/threadlocal/</id>
-        <link href="https://beyondpn.github.io/post/threadlocal/">
+        <id>http://localhost:4000/post/threadlocal/</id>
+        <link href="http://localhost:4000/post/threadlocal/">
         </link>
         <updated>2020-04-26T12:46:39.000Z</updated>
-        <content type="html"><![CDATA[<p>前两天看同事的代码，同事提了一句说</p>
+        <summary type="html"><![CDATA[<p>按照编码建议将 ThreadLocal 对象声明为 <code>static</code> 的，正常使用 ThreadLocal 即可.</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>按照编码建议将 ThreadLocal 对象声明为 <code>static</code> 的，正常使用 ThreadLocal 即可.</p>
+<!-- more -->
+<p>前两天看同事的代码，同事提了一句说</p>
 <blockquote>
 <p>ThreadLocal 的 map 的 Entry 是 WeakReference，所以会出现 ThreadLocal 对象被 GC 释放的问题，故他在代码中使用 ThreadLocal 时考虑了这个情况，不会出现问题。</p>
 </blockquote>
@@ -100,11 +149,15 @@
     </entry>
     <entry>
         <title type="html"><![CDATA[改 5 个字符修了一个 bug]]></title>
-        <id>https://beyondpn.github.io/post/fix-a-bug-within-five-char/</id>
-        <link href="https://beyondpn.github.io/post/fix-a-bug-within-five-char/">
+        <id>http://localhost:4000/post/fix-a-bug-within-five-char/</id>
+        <link href="http://localhost:4000/post/fix-a-bug-within-five-char/">
         </link>
         <updated>2016-11-25T16:50:54.000Z</updated>
-        <content type="html"><![CDATA[<p>公司决定赌一把，把所有项目组撤销合并到《石器时代》里，毕竟腾讯发行，希望很大。石器的代码源自新仙剑，是 c# 和 c++ 编写的。当时我在上家公司做平台的时候，奎斌写了服务器的第一版，依然怀念每天一起去华师大吃饭扯皮的日子。</p>
+        <summary type="html"><![CDATA[<p>切记不要简单的望文生义。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>切记不要简单的望文生义。</p>
+<!-- more -->
+<p>公司决定赌一把，把所有项目组撤销合并到《石器时代》里，毕竟腾讯发行，希望很大。石器的代码源自新仙剑，是 c# 和 c++ 编写的。当时我在上家公司做平台的时候，奎斌写了服务器的第一版，依然怀念每天一起去华师大吃饭扯皮的日子。</p>
 <p>之后几经辗转，换了几批人，这些满是补丁的代码成了石器的服务端基础代码。代码年久失修，所以前段时间他们决定用 netty 重写网关，我加入的时候这个新版网关正在测试。测试反馈了一个 bug，压力测试环境中，机器人全部杀掉之后，有部分机器人没有下线。我相对清闲，又是公司第一个用 netty 写服务端的，于是去解决这个 bug。从表现看，正常下线和不正常下线的机器人都有，比较符合并发 bug 的表现，于是去翻代码，特别注意有并发的部分。</p>
 <p>机器人下线的代码是这么写的。</p>
 <pre><code class="language-java">public void channelInactive(ChannelHandlerContext ctx) throws Exception {
@@ -146,11 +199,15 @@ public Queue getMessageQueue() {
     </entry>
     <entry>
         <title type="html"><![CDATA[也谈谈医疗改革]]></title>
-        <id>https://beyondpn.github.io/post/health-care/</id>
-        <link href="https://beyondpn.github.io/post/health-care/">
+        <id>http://localhost:4000/post/health-care/</id>
+        <link href="http://localhost:4000/post/health-care/">
         </link>
         <updated>2016-10-26T11:59:48.000Z</updated>
-        <content type="html"><![CDATA[<p>前几天看到连岳写的一篇文章，<a href="https://mp.weixin.qq.com/s?src=3&amp;timestamp=1477480477&amp;ver=1&amp;signature=A*ITBFB6b3tsFG2Ty6b4t*Kq6NxSb2rrQT5lhUeO8LaPPO4aAGC2MzwVjAtSJ9topO4FHC6aO8v7tlYqDGMpHrhvsGzgODl8ygOlj8tkeJ4j5cQdzQIquLXUStqXF9knIp209VWB16GvHYVU5MEeh-SdDNu2g0EmFOD8muvm3AU=">祝民营医院挖光儿科医生</a>，而我做父亲一年半来带女儿看病的经历也让我对这一块有切身感受。</p>
+        <summary type="html"><![CDATA[<p>毒瘤要切掉，最终解决问题还是得技术进步。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>毒瘤要切掉，最终解决问题还是得技术进步。</p>
+<!-- more -->
+<p>前几天看到连岳写的一篇文章，<a href="https://mp.weixin.qq.com/s?src=3&amp;timestamp=1477480477&amp;ver=1&amp;signature=A*ITBFB6b3tsFG2Ty6b4t*Kq6NxSb2rrQT5lhUeO8LaPPO4aAGC2MzwVjAtSJ9topO4FHC6aO8v7tlYqDGMpHrhvsGzgODl8ygOlj8tkeJ4j5cQdzQIquLXUStqXF9knIp209VWB16GvHYVU5MEeh-SdDNu2g0EmFOD8muvm3AU=">祝民营医院挖光儿科医生</a>，而我做父亲一年半来带女儿看病的经历也让我对这一块有切身感受。</p>
 <h3 id="一">一</h3>
 <p>女儿一岁半，生过几次病，出生时黄疸一次，腹泻一次，感冒咳嗽几次，还有一次是因为我这个不合格的父亲导致头破了。</p>
 <p>麻烦的是咳嗽，一般发病流程是这样的。先是咳嗽，去医院检查一下就是喉咙发炎，然后医生开些药吃，运气好的话起效就结束了，运气不好，再去看的时候就是支气管炎，这时候很危险，搞不好会发展成肺炎。</p>
@@ -174,11 +231,15 @@ public Queue getMessageQueue() {
     </entry>
     <entry>
         <title type="html"><![CDATA[HashMap 和 ArrayList 有什么区别？兼谈面试题的选择]]></title>
-        <id>https://beyondpn.github.io/post/the-difference-between-hashmap-and-arraylist/</id>
-        <link href="https://beyondpn.github.io/post/the-difference-between-hashmap-and-arraylist/">
+        <id>http://localhost:4000/post/the-difference-between-hashmap-and-arraylist/</id>
+        <link href="http://localhost:4000/post/the-difference-between-hashmap-and-arraylist/">
         </link>
         <updated>2016-08-23T16:00:00.000Z</updated>
-        <content type="html"><![CDATA[<blockquote>
+        <summary type="html"><![CDATA[<p>面试不是为了考到别人，是为了找到我们需要的人，面试官也要换位思考。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>面试不是为了考到别人，是为了找到我们需要的人，面试官也要换位思考。</p>
+<!-- more -->
+<blockquote>
 <p>Q: HashMap 和 ArrayList 有什么区别？<br>
 A: ... (一脸懵逼，这根本就是两种东西好嘛）</p>
 </blockquote>

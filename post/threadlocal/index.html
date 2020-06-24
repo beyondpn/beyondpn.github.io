@@ -1,106 +1,100 @@
-<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8" >
-
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>说说 ThreadLocal | BeyondPN</title>
-
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
-<link rel="shortcut icon" href="https://beyondpn.github.io/favicon.ico?v=1587905303321">
-<link rel="stylesheet" href="https://beyondpn.github.io/styles/main.css">
-
-
-
-<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
-<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<link rel="shortcut icon" href="http://localhost:4000/favicon.ico?v=1592997904415">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="http://localhost:4000/styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="说说 ThreadLocal | BeyondPN - Atom Feed" href="http://localhost:4000/atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
 
 
 
-    <meta name="description" content="前两天看同事的代码，同事提了一句说
+    <meta name="description" content="按照编码建议将 ThreadLocal 对象声明为 static 的，正常使用 ThreadLocal 即可.
 
-ThreadLocal 的 map 的 Entry 是 WeakReference，所以会出现 ThreadLocal 对象被 GC 释放的问题，故他在代码中使用 ThreadLocal 时考虑了这个情..." />
+前两天看同事的代码，同事提了一句说
+
+ThreadLocal 的 map 的 Entry 是 WeakReference，所以..." />
     <meta name="keywords" content="" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+    <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
   </head>
   <body>
-    <div id="app" class="main">
-
-      <div class="sidebar" :class="{ 'full-height': menuVisible }">
-  <div class="top-container" data-aos="fade-right">
-    <div class="top-header-container">
-      <a class="site-title-container" href="https://beyondpn.github.io">
-        <img src="https://beyondpn.github.io/images/avatar.png?v=1587905303321" class="site-logo">
-        <h1 class="site-title">BeyondPN</h1>
-      </a>
-      <div class="menu-btn" @click="menuVisible = !menuVisible">
-        <div class="line"></div>
-      </div>
-    </div>
-    <div>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="http://localhost:4000">
+  <img class="avatar" src="http://localhost:4000/images/avatar.png?v=1592997904415" alt="">
+  </a>
+  <h1 class="site-title">
+    BeyondPN
+  </h1>
+  <p class="site-description">
+    BE REAL, BE FREE
+  </p>
+  <div class="menu-container">
+    
       
-        
-          <a href="/" class="site-nav">
-            首页
-          </a>
-        
+        <a href="/" class="menu">
+          首页
+        </a>
       
-        
-          <a href="/archives" class="site-nav">
-            归档
-          </a>
-        
+    
       
-        
-          <a href="/tags" class="site-nav">
-            标签
-          </a>
-        
+        <a href="/archives" class="menu">
+          归档
+        </a>
       
-        
-          <a href="/post/about" class="site-nav">
-            关于
-          </a>
-        
+    
       
-    </div>
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
   </div>
-  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
-    <div class="social-container">
+  <div class="social-container">
+    
       
-        
-          <a class="social-link" href="https://github.com/beyondpn" target="_blank">
-            <i class="fab fa-github"></i>
-          </a>
-        
+    
       
-        
+    
       
-        
+    
       
-        
+    
       
-        
-      
-    </div>
-    <div class="site-description">
-      BE REAL, BE FREE
-    </div>
-    <div class="site-footer">
-      Talk is cheap, show me the code. | <a class="rss" href="https://beyondpn.github.io/atom.xml" target="_blank">RSS</a>
-    </div>
+    
   </div>
 </div>
 
-
-      <div class="main-container">
-        <div class="content-container" data-aos="fade-up">
-          <div class="post-detail">
-            <h2 class="post-title">说说 ThreadLocal</h2>
-            <div class="post-date">2020-04-26</div>
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              说说 ThreadLocal
+            </h2>
+            <div class="post-info">
+              <span>
+                2020-04-26
+              </span>
+              <span>
+                4 min read
+              </span>
+              
+            </div>
             
-            <div class="post-content" v-pre>
-              <p>前两天看同事的代码，同事提了一句说</p>
+            <div class="post-content-wrapper">
+              <div class="post-content">
+                <p>按照编码建议将 ThreadLocal 对象声明为 <code>static</code> 的，正常使用 ThreadLocal 即可.</p>
+<!-- more -->
+<p>前两天看同事的代码，同事提了一句说</p>
 <blockquote>
 <p>ThreadLocal 的 map 的 Entry 是 WeakReference，所以会出现 ThreadLocal 对象被 GC 释放的问题，故他在代码中使用 ThreadLocal 时考虑了这个情况，不会出现问题。</p>
 </blockquote>
@@ -181,45 +175,76 @@ ThreadLocal 的 map 的 Entry 是 WeakReference，所以会出现 ThreadLocal �
 <p>这里要注意，WeakReference 引用的对象是 ThreadLocal，也就是说只要你保持对 ThreadLocal 对象的引用，就不会被清除掉。而这里使用 WeakReference 的原因，也写的很清除了，主要是避免在 ThreadLocal 对象被清理的情况下发生内存泄漏。如果 ThreadLocal 对象被清理了，Thread 的成员变量 <code>ThreadLocal.ThreadLocalMap threadLocals</code> 会在 gc 时清理掉这些对象，避免内存泄漏。</p>
 <p>另外，jdk 的实现中 ThreadLocal 设计为由 <code>Thread</code> 持有以 <code>ThreadLocal</code>为 key 的 <code>ThreadLocalMap</code> ，而不是由 <code>ThreadLocal</code> 对象持有以 <code>Thread</code> 为 key 的 <code>ThreadLocalMap</code> 也是处于避免内存泄漏的考虑。因为大部分情况下 Thread 的生命周期会短于 <code>ThreadLocal</code> 的生命周期。</p>
 
-            </div>
-            
-            
-              <div class="next-post">
-                <div class="next">下一篇</div>
-                <a href="https://beyondpn.github.io/post/fix-a-bug-within-five-char/">
-                  <h3 class="post-title">
-                    改 5 个字符修了一个 bug
-                  </h3>
-                </a>
               </div>
-            
-
-            
-
-          </div>
-
+              <div class="toc-container">
+                
+              </div>
+            </div>
+          </article>
         </div>
+
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="http://localhost:4000/post/fix-a-bug-within-five-char/">
+              <h3 class="post-title">
+                改 5 个字符修了一个 bug
+              </h3>
+            </a>
+          </div>
+        
+
+        
+
+        <div class="site-footer">
+  Talk is cheap, show me the code.
+  <a class="rss" href="http://localhost:4000/atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
       </div>
     </div>
 
-    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
-<script type="application/javascript">
+    <script>
+      hljs.initHighlightingOnLoad()
 
-AOS.init();
+      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
 
-var app = new Vue({
-  el: '#app',
-  data: {
-    menuVisible: false,
-  },
-})
+      // This should probably be throttled.
+      // Especially because it triggers during smooth scrolling.
+      // https://lodash.com/docs/4.17.10#throttle
+      // You could do like...
+      // window.addEventListener("scroll", () => {
+      //    _.throttle(doThatStuff, 100);
+      // });
+      // Only not doing it here to keep this Pen dependency-free.
 
-</script>
+      window.addEventListener("scroll", event => {
+        let fromTop = window.scrollY;
 
+        mainNavLinks.forEach((link, index) => {
+          let section = document.getElementById(decodeURI(link.hash).substring(1));
+          let nextSection = null
+          if (mainNavLinks[index + 1]) {
+            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+          }
+          if (section.offsetTop <= fromTop) {
+            if (nextSection) {
+              if (nextSection.offsetTop > fromTop) {
+                link.classList.add("current");
+              } else {
+                link.classList.remove("current");    
+              }
+            } else {
+              link.classList.add("current");
+            }
+          } else {
+            link.classList.remove("current");
+          }
+        });
+      });
 
-
-
-
-
+    </script>
   </body>
 </html>
