@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-    <id>http://localhost:4000</id>
+    <id>https://beyondpn.github.io</id>
     <title>BeyondPN</title>
-    <updated>2020-06-24T11:27:37.799Z</updated>
+    <updated>2020-06-24T11:38:09.034Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
-    <link rel="alternate" href="http://localhost:4000"/>
-    <link rel="self" href="http://localhost:4000/atom.xml"/>
+    <link rel="alternate" href="https://beyondpn.github.io"/>
+    <link rel="self" href="https://beyondpn.github.io/atom.xml"/>
     <subtitle>BE REAL, BE FREE</subtitle>
-    <logo>http://localhost:4000/images/avatar.png</logo>
-    <icon>http://localhost:4000/favicon.ico</icon>
+    <logo>https://beyondpn.github.io/images/avatar.png</logo>
+    <icon>https://beyondpn.github.io/favicon.ico</icon>
     <rights>All rights reserved 2020, BeyondPN</rights>
     <entry>
         <title type="html"><![CDATA[数据库连接的重连]]></title>
-        <id>http://localhost:4000/post/reconnect_config/</id>
-        <link href="http://localhost:4000/post/reconnect_config/">
+        <id>https://beyondpn.github.io/post/reconnect_config/</id>
+        <link href="https://beyondpn.github.io/post/reconnect_config/">
         </link>
         <updated>2020-06-24T10:05:26.000Z</updated>
         <summary type="html"><![CDATA[<p>每次项目上线前都必然会确认下数据库，redis 的断线重连机制，由于事关重大，每次都要查询资料，浪费了很多时间。这次查询后在这里记录一下，作为一个检查表，避免下次再麻烦。</p>
@@ -57,8 +57,8 @@
     </entry>
     <entry>
         <title type="html"><![CDATA[说说 ThreadLocal]]></title>
-        <id>http://localhost:4000/post/threadlocal/</id>
-        <link href="http://localhost:4000/post/threadlocal/">
+        <id>https://beyondpn.github.io/post/threadlocal/</id>
+        <link href="https://beyondpn.github.io/post/threadlocal/">
         </link>
         <updated>2020-04-26T12:46:39.000Z</updated>
         <summary type="html"><![CDATA[<p>按照编码建议将 ThreadLocal 对象声明为 <code>static</code> 的，正常使用 ThreadLocal 即可.</p>
@@ -149,8 +149,8 @@
     </entry>
     <entry>
         <title type="html"><![CDATA[改 5 个字符修了一个 bug]]></title>
-        <id>http://localhost:4000/post/fix-a-bug-within-five-char/</id>
-        <link href="http://localhost:4000/post/fix-a-bug-within-five-char/">
+        <id>https://beyondpn.github.io/post/fix-a-bug-within-five-char/</id>
+        <link href="https://beyondpn.github.io/post/fix-a-bug-within-five-char/">
         </link>
         <updated>2016-11-25T16:50:54.000Z</updated>
         <summary type="html"><![CDATA[<p>切记不要简单的望文生义。</p>
@@ -199,8 +199,8 @@ public Queue getMessageQueue() {
     </entry>
     <entry>
         <title type="html"><![CDATA[也谈谈医疗改革]]></title>
-        <id>http://localhost:4000/post/health-care/</id>
-        <link href="http://localhost:4000/post/health-care/">
+        <id>https://beyondpn.github.io/post/health-care/</id>
+        <link href="https://beyondpn.github.io/post/health-care/">
         </link>
         <updated>2016-10-26T11:59:48.000Z</updated>
         <summary type="html"><![CDATA[<p>毒瘤要切掉，最终解决问题还是得技术进步。</p>
@@ -231,8 +231,8 @@ public Queue getMessageQueue() {
     </entry>
     <entry>
         <title type="html"><![CDATA[HashMap 和 ArrayList 有什么区别？兼谈面试题的选择]]></title>
-        <id>http://localhost:4000/post/the-difference-between-hashmap-and-arraylist/</id>
-        <link href="http://localhost:4000/post/the-difference-between-hashmap-and-arraylist/">
+        <id>https://beyondpn.github.io/post/the-difference-between-hashmap-and-arraylist/</id>
+        <link href="https://beyondpn.github.io/post/the-difference-between-hashmap-and-arraylist/">
         </link>
         <updated>2016-08-23T16:00:00.000Z</updated>
         <summary type="html"><![CDATA[<p>面试不是为了考到别人，是为了找到我们需要的人，面试官也要换位思考。</p>
