@@ -1,0 +1,247 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>排队服务器的设计 | BeyondPN</title>
+<link rel="shortcut icon" href="https://beyondpn.github.io/favicon.ico?v=1595595704046">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://beyondpn.github.io/styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="排队服务器的设计 | BeyondPN - Atom Feed" href="https://beyondpn.github.io/atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+
+
+
+    <meta name="description" content="排队服务不在玩家的主流程上，主要功用是在服务器爆满时使未进入的玩家体验更好。
+
+需求
+业务需求
+
+服务器空闲时玩家无感知
+服务器爆满时按照玩家登录的先后顺序排队等待进入服务器
+已排队进入服务器的玩家掉线重连不需要重新排队
+
+约束
+
+排队服务..." />
+    <meta name="keywords" content="" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+    <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://beyondpn.github.io">
+  <img class="avatar" src="https://beyondpn.github.io/images/avatar.png?v=1595595704046" alt="">
+  </a>
+  <h1 class="site-title">
+    BeyondPN
+  </h1>
+  <p class="site-description">
+    BE REAL, BE FREE
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              排队服务器的设计
+            </h2>
+            <div class="post-info">
+              <span>
+                2020-07-24
+              </span>
+              <span>
+                4 min read
+              </span>
+              
+            </div>
+            
+            <div class="post-content-wrapper">
+              <div class="post-content">
+                <p>排队服务不在玩家的主流程上，主要功用是在服务器爆满时使未进入的玩家体验更好。</p>
+<!-- more -->
+<h2 id="需求">需求</h2>
+<h3 id="业务需求">业务需求</h3>
+<ol>
+<li>服务器空闲时玩家无感知</li>
+<li>服务器爆满时按照玩家登录的先后顺序排队等待进入服务器</li>
+<li>已排队进入服务器的玩家掉线重连不需要重新排队</li>
+</ol>
+<h3 id="约束">约束</h3>
+<ol>
+<li>排队服务器不在主流程上，挂掉不应该影响玩家正常游戏</li>
+</ol>
+<h2 id="设计">设计</h2>
+<ol>
+<li>排队服务器是一个单独的服务器，不与游戏在一起。这样做可以满足多 gate 的情况。还有额外的好处是不会给游戏带来额外的压力，并且提高排队服的通用性，之后的游戏可以直接接入。</li>
+<li>排队服不需要绝对的可靠。因此，我把排队的数据全部保存在进程内存中，这样简化了排队服的业务逻辑。付出的代价是一旦排队服挂掉，所有排队号都会失效。</li>
+<li>排队服使用 http 协议，是一个 web 应用。这样比较简单，客户端也表示他们更方便接入。</li>
+<li>排队服使用业务使用单线程设计，简化实现，且排队服业务简单，数据全部在内存中，性能不是瓶颈。</li>
+</ol>
+<h3 id="客户端交互流程图">客户端交互流程图</h3>
+<figure data-type="image" tabindex="1"><img src="https://beyondpn.github.io/post-images/1595592866928.svg" alt="" loading="lazy"></figure>
+<h3 id="核心数据结构">核心数据结构</h3>
+<p>排队使用 skipList 实现，score 由一个 AtomicLong 发放，依次递增，保证先后顺序。<br>
+排队号的过期使用 timeWheel 做定时（直接使用 netty 的 HashedWheelTimer）。</p>
+<h3 id="接口">接口</h3>
+<p>与游戏服的接口</p>
+<pre><code class="language-java">    // 登录 gate 时通过此接口返回 ticket 并验证是否需要排队
+    @RequestMapping(value = &quot;/get_ticket/v1/{profileId}/{serverId}&quot;, method = RequestMethod.GET)
+    @ApiOperation(value = &quot;获取排队号&quot;)
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = &quot;profileId&quot;, value = &quot;profile id&quot;, required = true, type = &quot;path&quot;),
+            @ApiImplicitParam(name = &quot;serverId&quot;, value = &quot;server id&quot;, required = true, type = &quot;path&quot;)
+    })
+    public ApiResult&lt;GetTicketResult&gt; getTicket(@PathVariable(&quot;profileId&quot;) Long profileId, @PathVariable(&quot;serverId&quot;) Integer serverId) ;
+
+    // 退出或掉线时通过此接口延迟过期排队号
+    @RequestMapping(value = &quot;/ticket_logout/v1/{ticket}&quot;, method = RequestMethod.GET)
+    @ApiOperation(value = &quot;退出时延迟过期排队号&quot;)
+    @ApiImplicitParam(name = &quot;ticket&quot;, value = &quot;排队号&quot;, required = true, type = &quot;path&quot;)
+    public ApiResult&lt;Void&gt; scheduleExpireTicket(@PathVariable(&quot;ticket&quot;) String ticket) ;
+</code></pre>
+<p>与客户端的接口</p>
+<pre><code class="language-java">    //客户端请求此接口获得自己的排队名次。客户端需要根据名次确定合理的请求频率，越接近进入游戏，频率越高
+    @RequestMapping(value = &quot;/check/v1/{ticket}&quot;, method = RequestMethod.GET)
+    @ApiOperation(value = &quot;检查排队号&quot;)
+    @ApiImplicitParam(name = &quot;ticket&quot;, value = &quot;queue ticket&quot;, required = true, dataType = &quot;String&quot;, type = &quot;path&quot;)
+    public ApiResult&lt;CheckTicketResult&gt; checkTicket(@PathVariable(&quot;ticket&quot;) String ticket);
+</code></pre>
+<h3 id="宕机恢复">宕机恢复</h3>
+<p>一旦排队服务器宕机，排队号全部过期，玩家只能依靠 Gate 限流，比较粗暴。<br>
+排队服再次启动后，由于排队服的在线数已丢失，无法正确排队。规避办法是排队服定期（每10秒）去查询一下游戏服在线人数。判断是否需要排队时取  Max（游戏服在线人数，排队服在线人数）。</p>
+
+              </div>
+              <div class="toc-container">
+                <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li><a href="#%E9%9C%80%E6%B1%82">需求</a>
+<ul>
+<li><a href="#%E4%B8%9A%E5%8A%A1%E9%9C%80%E6%B1%82">业务需求</a></li>
+<li><a href="#%E7%BA%A6%E6%9D%9F">约束</a></li>
+</ul>
+</li>
+<li><a href="#%E8%AE%BE%E8%AE%A1">设计</a>
+<ul>
+<li><a href="#%E5%AE%A2%E6%88%B7%E7%AB%AF%E4%BA%A4%E4%BA%92%E6%B5%81%E7%A8%8B%E5%9B%BE">客户端交互流程图</a></li>
+<li><a href="#%E6%A0%B8%E5%BF%83%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84">核心数据结构</a></li>
+<li><a href="#%E6%8E%A5%E5%8F%A3">接口</a></li>
+<li><a href="#%E5%AE%95%E6%9C%BA%E6%81%A2%E5%A4%8D">宕机恢复</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+              </div>
+            </div>
+          </article>
+        </div>
+
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://beyondpn.github.io/post/reconnect_config/">
+              <h3 class="post-title">
+                数据库连接的重连
+              </h3>
+            </a>
+          </div>
+        
+
+        
+
+        <div class="site-footer">
+  Talk is cheap, show me the code.
+  <a class="rss" href="https://beyondpn.github.io/atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
+      </div>
+    </div>
+
+    <script>
+      hljs.initHighlightingOnLoad()
+
+      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+      // This should probably be throttled.
+      // Especially because it triggers during smooth scrolling.
+      // https://lodash.com/docs/4.17.10#throttle
+      // You could do like...
+      // window.addEventListener("scroll", () => {
+      //    _.throttle(doThatStuff, 100);
+      // });
+      // Only not doing it here to keep this Pen dependency-free.
+
+      window.addEventListener("scroll", event => {
+        let fromTop = window.scrollY;
+
+        mainNavLinks.forEach((link, index) => {
+          let section = document.getElementById(decodeURI(link.hash).substring(1));
+          let nextSection = null
+          if (mainNavLinks[index + 1]) {
+            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+          }
+          if (section.offsetTop <= fromTop) {
+            if (nextSection) {
+              if (nextSection.offsetTop > fromTop) {
+                link.classList.add("current");
+              } else {
+                link.classList.remove("current");    
+              }
+            } else {
+              link.classList.add("current");
+            }
+          } else {
+            link.classList.remove("current");
+          }
+        });
+      });
+
+    </script>
+  </body>
+</html>

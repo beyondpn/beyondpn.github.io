@@ -2,19 +2,18 @@
   <head>
     <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>关于 | BeyondPN</title>
+<title>git subtree &amp; git submodule | BeyondPN</title>
 <link rel="shortcut icon" href="https://beyondpn.github.io/favicon.ico?v=1595595704046">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
 <link rel="stylesheet" href="https://beyondpn.github.io/styles/main.css">
-<link rel="alternate" type="application/atom+xml" title="关于 | BeyondPN - Atom Feed" href="https://beyondpn.github.io/atom.xml">
+<link rel="alternate" type="application/atom+xml" title="git subtree &amp; git submodule | BeyondPN - Atom Feed" href="https://beyondpn.github.io/atom.xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
 
 
 
-    <meta name="description" content="BeyondPN
-07年到现在一直写 Java。
-努力写出漂亮的代码。
-" />
+    <meta name="description" content="git subtree 和 submodule 都是在 git 中引用其他项目的方法，该如何使用呢？这里简要记录一下。
+
+最近在使用 Gridea 写 blog，好的一点是不需要搭建环境，安装，就集成了全部的东西。Gridea 跟 jeky..." />
     <meta name="keywords" content="" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
     <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
@@ -77,11 +76,11 @@
         <div class="post-detail">
           <article class="post">
             <h2 class="post-title">
-              关于
+              git subtree &amp; git submodule
             </h2>
             <div class="post-info">
               <span>
-                2019-01-25
+                2020-06-28
               </span>
               <span>
                 1 min read
@@ -91,9 +90,14 @@
             
             <div class="post-content-wrapper">
               <div class="post-content">
-                <p>BeyondPN</p>
-<p>07年到现在一直写 Java。</p>
-<p>努力写出漂亮的代码。</p>
+                <p>git subtree 和 submodule 都是在 git 中引用其他项目的方法，该如何使用呢？这里简要记录一下。</p>
+<!-- more -->
+<p>最近在使用 Gridea 写 blog，好的一点是不需要搭建环境，安装，就集成了全部的东西。Gridea 跟 jekyll 的不同之处在于，Gridea 是把生成的 html 文档保存到 xxx.github.io 库，而不是源文件。所以我新建了一个 Gridea 作为源文件的库。</p>
+<p>这里现在牵涉到两个库，且有固定的目录结构。即 Gridea/output。<br>
+起初我把 output 目录作为一个 submodule 引入到 Gridea 工程中，碰到的问题就是提交的时候比较麻烦。在 Gridea 目录下使用 git status 不能显示 output 的变更，且提交无效。后改用 subtree 解决这一问题。</p>
+<p>这里做一个总结。</p>
+<p>先说相同点：两者都适用于引入另外一个库的情况，都可以指定分支，tag 引入。<br>
+区别：</p>
 
               </div>
               <div class="toc-container">
