@@ -3,10 +3,10 @@
     <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>排队服务器的设计 | BeyondPN</title>
-<link rel="shortcut icon" href="http://localhost:4000/favicon.ico?v=1626777725110">
+<link rel="shortcut icon" href="https://beyondpn.github.io/favicon.ico?v=1626777725155">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
-<link rel="stylesheet" href="http://localhost:4000/styles/main.css">
-<link rel="alternate" type="application/atom+xml" title="排队服务器的设计 | BeyondPN - Atom Feed" href="http://localhost:4000/atom.xml">
+<link rel="stylesheet" href="https://beyondpn.github.io/styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="排队服务器的设计 | BeyondPN - Atom Feed" href="https://beyondpn.github.io/atom.xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
 
 
@@ -31,8 +31,8 @@
     <div class="main">
       <div class="main-content">
         <div class="site-header">
-  <a href="http://localhost:4000">
-  <img class="avatar" src="http://localhost:4000/images/avatar.png?v=1626777725110" alt="">
+  <a href="https://beyondpn.github.io">
+  <img class="avatar" src="https://beyondpn.github.io/images/avatar.png?v=1626777725155" alt="">
   </a>
   <h1 class="site-title">
     BeyondPN
@@ -120,7 +120,7 @@
 <li>排队服使用业务使用单线程设计，简化实现，且排队服业务简单，数据全部在内存中，性能不是瓶颈。</li>
 </ol>
 <h3 id="客户端交互流程图">客户端交互流程图</h3>
-<figure data-type="image" tabindex="1"><img src="http://localhost:4000/post-images/1595592866928.svg" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="1"><img src="https://beyondpn.github.io/post-images/1595592866928.svg" alt="" loading="lazy"></figure>
 <h3 id="核心数据结构">核心数据结构</h3>
 <p>排队使用 skipList 实现，score 由一个 AtomicLong 发放，依次递增，保证先后顺序。<br>
 排队号的过期使用 timeWheel 做定时（直接使用 netty 的 HashedWheelTimer）。</p>
@@ -183,7 +183,7 @@
         
           <div class="next-post">
             <div class="next">下一篇</div>
-            <a href="http://localhost:4000/post/reconnect_config/">
+            <a href="https://beyondpn.github.io/post/reconnect_config/">
               <h3 class="post-title">
                 数据库连接的重连
               </h3>
@@ -195,7 +195,7 @@
 
         <div class="site-footer">
   Talk is cheap, show me the code.
-  <a class="rss" href="http://localhost:4000/atom.xml" target="_blank">
+  <a class="rss" href="https://beyondpn.github.io/atom.xml" target="_blank">
     <i class="ri-rss-line"></i> RSS
   </a>
 </div>
