@@ -1,0 +1,256 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>名字长度怎么算 | BeyondPN</title>
+<link rel="shortcut icon" href="https://beyondpn.github.io/favicon.ico?v=1626777418906">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://beyondpn.github.io/styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="名字长度怎么算 | BeyondPN - Atom Feed" href="https://beyondpn.github.io/atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+
+
+
+    <meta name="description" content="在游戏或者任何需要输入的软件系统里，必然少不了长度限制这一条，比如游戏里面的角色名，公会名，队伍名，那就少不了需要计算长度。
+
+我们限制长度的目的就是在客户端那边看起来显示要正常，不能超框，不能刷屏。
+最早，只在国内发行的时候，我们限制长度..." />
+    <meta name="keywords" content="" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+    <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://beyondpn.github.io">
+  <img class="avatar" src="https://beyondpn.github.io/images/avatar.png?v=1626777418906" alt="">
+  </a>
+  <h1 class="site-title">
+    BeyondPN
+  </h1>
+  <p class="site-description">
+    BE REAL, BE FREE
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              名字长度怎么算
+            </h2>
+            <div class="post-info">
+              <span>
+                2021-07-20
+              </span>
+              <span>
+                4 min read
+              </span>
+              
+            </div>
+            
+            <div class="post-content-wrapper">
+              <div class="post-content">
+                <p>在游戏或者任何需要输入的软件系统里，必然少不了长度限制这一条，比如游戏里面的角色名，公会名，队伍名，那就少不了需要计算长度。</p>
+<!-- more -->
+<p>我们限制长度的目的就是在客户端那边看起来显示要正常，不能超框，不能刷屏。</p>
+<p>最早，只在国内发行的时候，我们限制长度用简单的数字节的方法，一个汉字对应两个字节，其宽度也恰好约等于两个英文字符的宽度。再加上取名字符范围的限制，这个方法还是好用的。</p>
+<p>现在，起名时不再限制字符范围，上面的方法实际已不再适用。举个例子，在泰语里 ·สองศูนย์พูนสวัสดิ์· 这个字符串的 String.length 是 18，但是如果我们按照英文字符那样数的话，基本上应该认为是 12。再加上 emoj 和 不同语言字符间距和宽度的不通，使用 String.length 或者数字节的方式都不能再较为正确的对应出字符串的实际显示长度了。</p>
+<p>为了解决这个问题，我们的系统中的字符串长度计算，是把字符串真正的打印出来，然后数一下像素宽度，以英文字母 a 的宽度作为一标准字符宽度，通过计算得出大概的字符数。在打印之前，我们会通过字符串处理，去除名字开头和结束的控制字符，零宽字符和各种空格。</p>
+<p>这个问题目前还存在这些问题：</p>
+<ol>
+<li>服务器字体与客户端字体存在不一致的情况，导致两边计算的长度并不能完全一致，这里服务器仅限制长度在配置长度的合理范围内即可。</li>
+<li>服务器字体不全，不能打印出所有的字符，不能打印的字符会被打印为替代字符，有固定的长度。目前是覆盖主要的测试测试区域的字符集。</li>
+</ol>
+<p>相关关键代码如下：</p>
+<pre><code class="language-java">    private static Font font;
+
+    static {
+        nameExcludePattern = Pattern.compile(NAME_EXCLUDE_REGEX);
+        font = new Font(&quot;SansSerif&quot;, Font.PLAIN, 12);
+    }
+
+    public static int size(String name) {
+        if (name == null || name.isEmpty()) return 0;
+        BufferedImage img = new BufferedImage(100, 40, BufferedImage.TYPE_INT_ARGB);
+        FontMetrics fm = img.getGraphics().getFontMetrics(font);
+        return (int) Math.ceil(fm.stringWidth(name) / 7.0);
+    }
+   
+    /**
+     * 判断 char 是否是空格&lt;br/&gt;
+     * 相关文档:&lt;br/&gt;
+     * &lt;a href=&quot;https://www.compart.com/en/unicode/category/Zs&quot;&gt;unicode 空格定义&lt;/a&gt;&lt;br/&gt;
+     * &lt;a href=&quot;https://www.compart.com/en/unicode/U+3164#UNC_DB&quot;&gt;u+3164&lt;/a&gt;
+     *
+     * @param ch char
+     * @return true 空格 false 不是空格
+     */
+    public static boolean isWhitespace(char ch) {
+        return Character.isWhitespace(ch)
+                || ch == '\u3164'
+                || ch == '\u00A0'
+                || ch == '\u2007'
+                || ch == '\u202F';
+    }
+
+    public static String strip(String str) {
+        return strip(str, ch -&gt; ch &lt;= 32 || isWhitespace(ch));
+    }
+
+    public static String strip(String str, final Predicate&lt;Character&gt; predicate) {
+        Objects.requireNonNull(predicate);
+        if (isEmpty(str)) {
+            return str;
+        }
+        str = stripStart(str, predicate);
+        return stripEnd(str, predicate);
+    }
+
+    public static String stripStart(final String str, final Predicate&lt;Character&gt; predicate) {
+        Objects.requireNonNull(predicate);
+        int strLen;
+        if (str == null || (strLen = str.length()) == 0) {
+            return str;
+        }
+        int start = 0;
+        while (start != strLen &amp;&amp; predicate.test(str.charAt(start))) {
+            start++;
+        }
+        return str.substring(start);
+    }
+
+    public static String stripEnd(final String str, final Predicate&lt;Character&gt; predicate) {
+        Objects.requireNonNull(predicate);
+        int end;
+        if (str == null || (end = str.length()) == 0) {
+            return str;
+        }
+
+        while (end != 0 &amp;&amp; predicate.test(str.charAt(end - 1))) {
+            end--;
+        }
+        return str.substring(0, end);
+    }
+</code></pre>
+<p>未采用方案，白名单方案：<br>
+制作一个包含所有需要显示内容的字体供服务器和客户端共同使用，使用 Font#canDisplay 或 Font#canDisplayUpTo 判断是否可显示此字符串，如不能显示，则返回错误。</p>
+<p>参考文档：<br>
+找到的较好的字体入门中文文档：<a href="https://juejin.cn/post/6844903745503887374">其一</a> <a href="https://juejin.cn/post/6844903773714776071">其二</a><br>
+<a href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM01/Chap1.html#compound">TrueType 文档</a><br>
+<a href="https://stackoverflow.com/questions/34732718/why-isnt-there-a-font-that-contains-all-unicode-glyphs">为什么没有一个字体可以包含所有的 unicode 字符</a><br>
+<a href="https://www.google.com/get/noto/">google notion 字体，试图包含所有 unicode 字符的字体集</a></p>
+
+              </div>
+              <div class="toc-container">
+                
+              </div>
+            </div>
+          </article>
+        </div>
+
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://beyondpn.github.io/post/gao-xiao-de-xiang-mu-guan-li/">
+              <h3 class="post-title">
+                版本合并中常用的 git 命令
+              </h3>
+            </a>
+          </div>
+        
+
+        
+
+        <div class="site-footer">
+  Talk is cheap, show me the code.
+  <a class="rss" href="https://beyondpn.github.io/atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
+      </div>
+    </div>
+
+    <script>
+      hljs.initHighlightingOnLoad()
+
+      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+      // This should probably be throttled.
+      // Especially because it triggers during smooth scrolling.
+      // https://lodash.com/docs/4.17.10#throttle
+      // You could do like...
+      // window.addEventListener("scroll", () => {
+      //    _.throttle(doThatStuff, 100);
+      // });
+      // Only not doing it here to keep this Pen dependency-free.
+
+      window.addEventListener("scroll", event => {
+        let fromTop = window.scrollY;
+
+        mainNavLinks.forEach((link, index) => {
+          let section = document.getElementById(decodeURI(link.hash).substring(1));
+          let nextSection = null
+          if (mainNavLinks[index + 1]) {
+            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+          }
+          if (section.offsetTop <= fromTop) {
+            if (nextSection) {
+              if (nextSection.offsetTop > fromTop) {
+                link.classList.add("current");
+              } else {
+                link.classList.remove("current");    
+              }
+            } else {
+              link.classList.add("current");
+            }
+          } else {
+            link.classList.remove("current");
+          }
+        });
+      });
+
+    </script>
+  </body>
+</html>

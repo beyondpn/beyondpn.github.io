@@ -2,36 +2,129 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://beyondpn.github.io</id>
     <title>BeyondPN</title>
-    <updated>2020-09-28T10:02:46.141Z</updated>
+    <updated>2021-07-20T10:39:52.876Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://beyondpn.github.io"/>
     <link rel="self" href="https://beyondpn.github.io/atom.xml"/>
     <subtitle>BE REAL, BE FREE</subtitle>
     <logo>https://beyondpn.github.io/images/avatar.png</logo>
     <icon>https://beyondpn.github.io/favicon.ico</icon>
-    <rights>All rights reserved 2020, BeyondPN</rights>
+    <rights>All rights reserved 2021, BeyondPN</rights>
     <entry>
-        <title type="html"><![CDATA[MMO 压测]]></title>
-        <id>https://beyondpn.github.io/post/mmo-stress-test/</id>
-        <link href="https://beyondpn.github.io/post/mmo-stress-test/">
+        <title type="html"><![CDATA[名字长度怎么算]]></title>
+        <id>https://beyondpn.github.io/post/how-to-estimate-string-length/</id>
+        <link href="https://beyondpn.github.io/post/how-to-estimate-string-length/">
         </link>
-        <updated>2020-09-28T09:00:26.000Z</updated>
-        <summary type="html"><![CDATA[<p>RO 即将上线，最近配合运营方做 OBT 前的压测。相对之前游戏的压测，这次要正规的多，这里记录一下。</p>
+        <updated>2021-07-20T08:26:35.000Z</updated>
+        <summary type="html"><![CDATA[<p>在游戏或者任何需要输入的软件系统里，必然少不了长度限制这一条，比如游戏里面的角色名，公会名，队伍名，那就少不了需要计算长度。</p>
 ]]></summary>
-        <content type="html"><![CDATA[<p>RO 即将上线，最近配合运营方做 OBT 前的压测。相对之前游戏的压测，这次要正规的多，这里记录一下。</p>
+        <content type="html"><![CDATA[<p>在游戏或者任何需要输入的软件系统里，必然少不了长度限制这一条，比如游戏里面的角色名，公会名，队伍名，那就少不了需要计算长度。</p>
 <!-- more -->
-<h2 id="确定压测的目标">确定压测的目标</h2>
-<p>压测的第一步就是确定压测目标。这里需要注意的是两点，一是压测目标一定要<strong>切合实际</strong>，二是压测目标要<strong>可度量</strong>。</p>
-<p>关于<strong>切合实际</strong>，我们碰到的一个案例是这样的。我们总的压测目标是 5K 在线，然后双方根据对游戏的理解确定了一些压测场景。在测试副本场景时不达标，延迟过高。沟通后发现对方 QA 是按照 5K 在线的标准去测试副本的压力的，场景是 5K 个副本，而有些副本一个本里面就有百十个怪物，导致服务器压力大涨。后来通过 CBT 埋点数据分析，5K 在线的副本，最高也就 1K 个，把测试目标降低到 1K 后，顺利通过测试。很显然，这里的 5K 个副本，就不是一个合理的目标，基于这个目标做优化，从一开始就是错误的。</p>
-<p>第二个是<strong>可度量</strong>。如果你在压测是否通过的时候还是登录客户端跟机器人一起玩玩游戏，通过流畅度的感受来决定是否通过的话，这就是不可度量的。当然，这样做也有好处，一个是简单直观，二个是可以检查机器人的行为是否符合逻辑。但是作为目标，就略显模糊了。一个合理可度量的指标要包括消息的 QPS，错误率，延时，服务端的 CPU，内存平均使用率，高峰使用率，服务器的流量，数据库的 IOPS 等。而 QPS 部分的确定又不能忘记第一条切合实际，最好是用实际的测试数据乘以一个系数制定。</p>
-<h2 id="压测准备">压测准备</h2>
-<p>MMO 由于是一个有状态的服务，肯定需要准备好机器人，这时候第一步的确定的场景就非常重要了，机器人的行为要能满足所有的场景。这里需要注意机器人的行为要模拟玩家的行为，这里如果游戏允许的话最好通过录协议的行式来完成，一个是真正的符合实际，第二个是开发量大减。我们的游戏不支持这种做法，只能通过人为在每一个机器人逻辑的时候尽量模拟。</p>
-<p>机器人的行为逻辑完成后，就是要做到可度量了。这里我们使用了 <a href="https://metrics.dropwizard.io/4.1.2/">dropwizard metics</a>，这也是 spring-boot 的 metrcs 工具，使用它的 meter 和 histo，可以统计最近1分钟，5分钟的 tps，平均，最大，p75，p95，p99，p999 等的延时信息。这个指标要比平均值靠谱的多，又省去了很多数据分析的时间，用法也简单。<br>
-这里不光机器人侧需要统计 metrics 信息，我们在游戏服务器内部也加上了同样的 metrics，这样就很容易发现问题出在哪里。比如，延迟高了，可能是机器人卡顿导致记录的延迟大了，可能是网络拥塞导致延迟大了，也可能是游戏服务器繁忙导致延迟大了，由于服务器是一个多进程的服务器，并且会依赖一些外部服务，所以还需要进一步确定是哪一个进程慢了还是外部服务慢了。这些都可以通过简单的对比 metrics 数据定位，在之后就有了优化的目标。</p>
-<h2 id="压测数据分析">压测数据分析</h2>
-<p>有了以上这些，实际压测就是按照测试用例跑机器人，记录各项指标，并不断调优的过程。</p>
-<p>在这个过程中要注意<strong>分析数据的合理性</strong>。比如，5k 人的时候服务器压力要比 3k 大，qps 要成比例，如果发现异常，可能是机器人逻辑有问题，比如由于机器人进程压力大或者网络拥塞，导致机器人在 5k 的时人均 qps 比 3k 低很多，这种情况下，测试结果也是不可靠的。</p>
-<p>我们也在压测中发现了一些问题，其中一些是代码需要优化，大部分是某些配置项不合理。也都一一修复，并且顺利通过了压测。</p>
+<p>我们限制长度的目的就是在客户端那边看起来显示要正常，不能超框，不能刷屏。</p>
+<p>最早，只在国内发行的时候，我们限制长度用简单的数字节的方法，一个汉字对应两个字节，其宽度也恰好约等于两个英文字符的宽度。再加上取名字符范围的限制，这个方法还是好用的。</p>
+<p>现在，起名时不再限制字符范围，上面的方法实际已不再适用。举个例子，在泰语里 ·สองศูนย์พูนสวัสดิ์· 这个字符串的 String.length 是 18，但是如果我们按照英文字符那样数的话，基本上应该认为是 12。再加上 emoj 和 不同语言字符间距和宽度的不通，使用 String.length 或者数字节的方式都不能再较为正确的对应出字符串的实际显示长度了。</p>
+<p>为了解决这个问题，我们的系统中的字符串长度计算，是把字符串真正的打印出来，然后数一下像素宽度，以英文字母 a 的宽度作为一标准字符宽度，通过计算得出大概的字符数。在打印之前，我们会通过字符串处理，去除名字开头和结束的控制字符，零宽字符和各种空格。</p>
+<p>这个问题目前还存在这些问题：</p>
+<ol>
+<li>服务器字体与客户端字体存在不一致的情况，导致两边计算的长度并不能完全一致，这里服务器仅限制长度在配置长度的合理范围内即可。</li>
+<li>服务器字体不全，不能打印出所有的字符，不能打印的字符会被打印为替代字符，有固定的长度。目前是覆盖主要的测试测试区域的字符集。</li>
+</ol>
+<p>相关关键代码如下：</p>
+<pre><code class="language-java">    private static Font font;
+
+    static {
+        nameExcludePattern = Pattern.compile(NAME_EXCLUDE_REGEX);
+        font = new Font(&quot;SansSerif&quot;, Font.PLAIN, 12);
+    }
+
+    public static int size(String name) {
+        if (name == null || name.isEmpty()) return 0;
+        BufferedImage img = new BufferedImage(100, 40, BufferedImage.TYPE_INT_ARGB);
+        FontMetrics fm = img.getGraphics().getFontMetrics(font);
+        return (int) Math.ceil(fm.stringWidth(name) / 7.0);
+    }
+   
+    /**
+     * 判断 char 是否是空格&lt;br/&gt;
+     * 相关文档:&lt;br/&gt;
+     * &lt;a href=&quot;https://www.compart.com/en/unicode/category/Zs&quot;&gt;unicode 空格定义&lt;/a&gt;&lt;br/&gt;
+     * &lt;a href=&quot;https://www.compart.com/en/unicode/U+3164#UNC_DB&quot;&gt;u+3164&lt;/a&gt;
+     *
+     * @param ch char
+     * @return true 空格 false 不是空格
+     */
+    public static boolean isWhitespace(char ch) {
+        return Character.isWhitespace(ch)
+                || ch == '\u3164'
+                || ch == '\u00A0'
+                || ch == '\u2007'
+                || ch == '\u202F';
+    }
+
+    public static String strip(String str) {
+        return strip(str, ch -&gt; ch &lt;= 32 || isWhitespace(ch));
+    }
+
+    public static String strip(String str, final Predicate&lt;Character&gt; predicate) {
+        Objects.requireNonNull(predicate);
+        if (isEmpty(str)) {
+            return str;
+        }
+        str = stripStart(str, predicate);
+        return stripEnd(str, predicate);
+    }
+
+    public static String stripStart(final String str, final Predicate&lt;Character&gt; predicate) {
+        Objects.requireNonNull(predicate);
+        int strLen;
+        if (str == null || (strLen = str.length()) == 0) {
+            return str;
+        }
+        int start = 0;
+        while (start != strLen &amp;&amp; predicate.test(str.charAt(start))) {
+            start++;
+        }
+        return str.substring(start);
+    }
+
+    public static String stripEnd(final String str, final Predicate&lt;Character&gt; predicate) {
+        Objects.requireNonNull(predicate);
+        int end;
+        if (str == null || (end = str.length()) == 0) {
+            return str;
+        }
+
+        while (end != 0 &amp;&amp; predicate.test(str.charAt(end - 1))) {
+            end--;
+        }
+        return str.substring(0, end);
+    }
+</code></pre>
+<p>未采用方案，白名单方案：<br>
+制作一个包含所有需要显示内容的字体供服务器和客户端共同使用，使用 Font#canDisplay 或 Font#canDisplayUpTo 判断是否可显示此字符串，如不能显示，则返回错误。</p>
+<p>参考文档：<br>
+找到的较好的字体入门中文文档：<a href="https://juejin.cn/post/6844903745503887374">其一</a> <a href="https://juejin.cn/post/6844903773714776071">其二</a><br>
+<a href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM01/Chap1.html#compound">TrueType 文档</a><br>
+<a href="https://stackoverflow.com/questions/34732718/why-isnt-there-a-font-that-contains-all-unicode-glyphs">为什么没有一个字体可以包含所有的 unicode 字符</a><br>
+<a href="https://www.google.com/get/noto/">google notion 字体，试图包含所有 unicode 字符的字体集</a></p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[版本合并中常用的 git 命令]]></title>
+        <id>https://beyondpn.github.io/post/gao-xiao-de-xiang-mu-guan-li/</id>
+        <link href="https://beyondpn.github.io/post/gao-xiao-de-xiang-mu-guan-li/">
+        </link>
+        <updated>2021-01-21T06:19:02.000Z</updated>
+        <content type="html"><![CDATA[<p>我们目前的版本管理是主干开发，每发一个大版本从主干开一个新的分支的做法。</p>
+<p>一般用到以下一些命令：</p>
+<pre><code>    git checkout -b  #建立分支
+    git checkout / git switch #切换到分支
+    git cherry-pick #合并提交到分支
+    git logs --author=xxx master ^branch #列出所有 master 有但是 branch 没有的提交，接下来可以 cherry-pick 了
+</code></pre>
+<hr>
+<p>今天听 梁文道的《八分》，里面提到了过年回家，各地规章的混乱，并且还提到至少应该提供一个统一的地方，方便我们查询各地的规则，还应该输入一个起始地和一个目的地，就告诉我应该怎么做。这个当然是不难，只是没有人愿意这么做。很久以来，我们就是这样，都进入了移动互联网时代，但是有价值的信息极为稀少，甚至是没有，每个地方都有一个看起来很相像的政府网站，一堆公众号，但是你在里面基本上很难查到一些有价值的信息，反而小小的香港政府，web 1.0 时代的网站，我记得去年疫情初期的时候就通过一个表格详细列出了你需要的各种信息。</p>
+<p>如果一个有价值的信息加 10分，一个错误的信息或者谣言 -1分，那在我们现在这个信息爆炸的时代，总评分估计是负的。</p>
 ]]></content>
     </entry>
     <entry>
