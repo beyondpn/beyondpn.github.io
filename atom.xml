@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-    <id>https://beyondpn.github.io</id>
+    <id>http://localhost:4000</id>
     <title>BeyondPN</title>
-    <updated>2021-07-20T10:53:01.955Z</updated>
+    <updated>2021-11-01T10:58:42.334Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
-    <link rel="alternate" href="https://beyondpn.github.io"/>
-    <link rel="self" href="https://beyondpn.github.io/atom.xml"/>
+    <link rel="alternate" href="http://localhost:4000"/>
+    <link rel="self" href="http://localhost:4000/atom.xml"/>
     <subtitle>BE REAL, BE FREE</subtitle>
-    <logo>https://beyondpn.github.io/images/avatar.png</logo>
-    <icon>https://beyondpn.github.io/favicon.ico</icon>
+    <logo>http://localhost:4000/images/avatar.png</logo>
+    <icon>http://localhost:4000/favicon.ico</icon>
     <rights>All rights reserved 2021, BeyondPN</rights>
     <entry>
         <title type="html"><![CDATA[名字长度怎么算]]></title>
-        <id>https://beyondpn.github.io/post/how-to-estimate-string-length/</id>
-        <link href="https://beyondpn.github.io/post/how-to-estimate-string-length/">
+        <id>http://localhost:4000/post/how-to-estimate-string-length/</id>
+        <link href="http://localhost:4000/post/how-to-estimate-string-length/">
         </link>
         <updated>2021-07-20T08:26:35.000Z</updated>
         <summary type="html"><![CDATA[<p>在游戏或者任何需要输入的软件系统里，必然少不了长度限制这一条，比如游戏里面的角色名，公会名，队伍名，那就少不了需要计算长度。</p>
@@ -110,18 +110,70 @@
 ]]></content>
     </entry>
     <entry>
-        <title type="html"><![CDATA[版本合并中常用的 git 命令]]></title>
-        <id>https://beyondpn.github.io/post/gao-xiao-de-xiang-mu-guan-li/</id>
-        <link href="https://beyondpn.github.io/post/gao-xiao-de-xiang-mu-guan-li/">
+        <title type="html"><![CDATA[git 笔记]]></title>
+        <id>http://localhost:4000/post/git-notes/</id>
+        <link href="http://localhost:4000/post/git-notes/">
         </link>
         <updated>2021-01-21T06:19:02.000Z</updated>
-        <content type="html"><![CDATA[<p>我们目前的版本管理是主干开发，每发一个大版本从主干开一个新的分支的做法。</p>
-<p>一般用到以下一些命令：</p>
-<pre><code>    git checkout -b  #建立分支
-    git checkout / git switch #切换到分支
-    git cherry-pick #合并提交到分支
-    git logs --author=xxx master ^branch #列出所有 master 有但是 branch 没有的提交，接下来可以 cherry-pick 了
-</code></pre>
+        <summary type="html"><![CDATA[<p>我们的项目使用 git 来进行版本管理，这里记录一些使用心得。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>我们的项目使用 git 来进行版本管理，这里记录一些使用心得。</p>
+<!-- more -->
+<ol>
+<li>
+<p>Git 是一个 Key/Value 数据库。（这是 git 官方的说法，我并没有看到 git 作为一个数据库的特殊优势，如果不涉及版本管理，大部分情况下其他的 kv 数据库似乎是一个更好的选择）</p>
+</li>
+<li>
+<p>Git 内部包含 blob对象（存储文件），tree 对象 ， commit 对象和 tag 对象（标签，见 引用部分)<br>
+对象在 <code>.git/objects</code> 目录下。<br>
+可以通过 <code>git cat-file -t sha1</code> 确定对象的类型<br>
+通过 <code>git cat-file -p sha1</code> 查看对象的内容<br>
+对象使用 <code>zlib</code> 压缩，亦可以使用 <code>pigz</code> 解压查看内容 <code>pigz -d sha1</code> 或 <code>pigz -d &lt; sha1</code></p>
+</li>
+<li>
+<p><code>Git 引用</code>保存在 <code>.git/refs</code> 目录下。所谓引用就是一个包含 sha1 值的文本文件。使用可读的名字，如 master。</p>
+<ol>
+<li><code>HEAD 引用</code> 是一个特殊的引用，内容不是 sha1 值，而是其他的引用的名称。</li>
+<li>标签引用分为轻量标签和附注标签，两种标签都是指向一个 sha1 的文本文件，不同的是轻量标签直接指向一个 <code>commit 对象</code> ，而附注标签指向一个 <code>标签对象</code> (标签对象里包含了 <code>tag -a xxx</code> 备注的内容。标签亦可指向任意对象，不过不是常规用法。</li>
+<li><code>远程引用</code> 是只读的，Git 将这些远程引用作为记录远程服务器上各分支最后已知位置状态的书签来管理。远程引用的文本内容是远程分支的  sha1 值。</li>
+</ol>
+</li>
+<li>
+<p>为节约存储空间，Git 使用打包对象来压缩文件。使用命令 <code>git gc</code> 可以手动开启打包，在你向远程服务器推送或本地有太多松散（loose）对象时，Git 也会自动启动打包。打包后的对象保存在 <code>.git/objects/pack</code> 目录下。可以通过 <code>git verify-pack pack-xxxx.idx</code> 命令查看已打包的内容。最新版的文件是保存全部，而旧的版本是保存差异内容（这基于大部分情况下需要快速访问文件的最新版本的假设）。</p>
+</li>
+<li>
+<p>git <code>rebase</code> 和 <code>cherry-pick</code> 的实现是相同的，都是把当前 commit 与 base 进行比较后，重放一遍变动。 git <code>merge</code> 的实现同理。</p>
+</li>
+<li>
+<p><code>git merge</code> 是三方合并，其他的版本管理系统同理。三方合并的具体做法是：</p>
+<ol>
+<li>找出要合并分支 A 和 B 的最大公共 base，commit C</li>
+<li>分别比较 commit C 与 A B，做 diff</li>
+<li>合并两个 diff</li>
+<li>生成一个新的 commit D，commit D 的 parent 有两个，分别是分支 A 和 B 的最后一个 commit</li>
+</ol>
+</li>
+<li>
+<p>关于 <code>git cherry-pick</code></p>
+<ol>
+<li>
+<p>由于是使用 diff 重放实现的，故会导致内容相同的两个提交。在使用 <code>git log A..B</code> 时无法比较 commit。有文章不提倡使用 <code>cherry-pick</code> ，此文章并给出了使用 patch 分支分别合并到 A 和 B 分支的方式来避免使用 <code>cherry-pick</code></p>
+<p><a href="https://devblogs.microsoft.com/oldnewthing/20180312-00/?p=98215">Stop cherry-picking, start merging, Part 1: The merge conflict</a></p>
+</li>
+<li>
+<p>按照 <code>cherry-pick</code> 的使用场景，应该仅在少数场景下使用。但是按照我们目前的开发流程。<br>
+master 作为开发分支<br>
+针对不同的地区使用不同的 release 分支（如 release/tw  release/sea)，都是 long live branch。<br>
+且不通分支之间的版本并不一致，有时候相差很长时间。<br>
+release 分支不会合并回 master。<br>
+为避免 <code>cherry-pick</code> 遗漏，我任务从 <code>master</code> 切出新的 <code>feature</code> 分支， <code>feature</code> 分支仅合并回主干，通过 <code>git cherry-pick commits</code> 将整个 <code>feature</code> 分支在各个 <code>release</code> 分支重放即可。</p>
+</li>
+</ol>
+</li>
+</ol>
+<p>Reference:</p>
+<p><a href="https://www.progit.cn/#_git_internals">Pro Git</a></p>
+<p><a href="https://git-scm.com/book/en/v2/Git-Internals-Git-Objects">Git - Git Objects</a></p>
 <hr>
 <p>今天听 梁文道的《八分》，里面提到了过年回家，各地规章的混乱，并且还提到至少应该提供一个统一的地方，方便我们查询各地的规则，还应该输入一个起始地和一个目的地，就告诉我应该怎么做。这个当然是不难，只是没有人愿意这么做。很久以来，我们就是这样，都进入了移动互联网时代，但是有价值的信息极为稀少，甚至是没有，每个地方都有一个看起来很相像的政府网站，一堆公众号，但是你在里面基本上很难查到一些有价值的信息，反而小小的香港政府，web 1.0 时代的网站，我记得去年疫情初期的时候就通过一个表格详细列出了你需要的各种信息。</p>
 <p>如果一个有价值的信息加 10分，一个错误的信息或者谣言 -1分，那在我们现在这个信息爆炸的时代，总评分估计是负的。</p>
@@ -129,8 +181,8 @@
     </entry>
     <entry>
         <title type="html"><![CDATA[排队服务器的设计]]></title>
-        <id>https://beyondpn.github.io/post/game-queue-server/</id>
-        <link href="https://beyondpn.github.io/post/game-queue-server/">
+        <id>http://localhost:4000/post/game-queue-server/</id>
+        <link href="http://localhost:4000/post/game-queue-server/">
         </link>
         <updated>2020-07-24T11:44:43.000Z</updated>
         <summary type="html"><![CDATA[<p>排队服务不在玩家的主流程上，主要功用是在服务器爆满时使未进入的玩家体验更好。</p>
@@ -156,7 +208,7 @@
 <li>排队服使用业务使用单线程设计，简化实现，且排队服业务简单，数据全部在内存中，性能不是瓶颈。</li>
 </ol>
 <h3 id="客户端交互流程图">客户端交互流程图</h3>
-<figure data-type="image" tabindex="1"><img src="https://beyondpn.github.io/post-images/1595592866928.svg" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="1"><img src="http://localhost:4000/post-images/1595592866928.svg" alt="" loading="lazy"></figure>
 <h3 id="核心数据结构">核心数据结构</h3>
 <p>排队使用 skipList 实现，score 由一个 AtomicLong 发放，依次递增，保证先后顺序。<br>
 排队号的过期使用 timeWheel 做定时（直接使用 netty 的 HashedWheelTimer）。</p>
@@ -191,8 +243,8 @@
     </entry>
     <entry>
         <title type="html"><![CDATA[数据库连接的重连]]></title>
-        <id>https://beyondpn.github.io/post/reconnect_config/</id>
-        <link href="https://beyondpn.github.io/post/reconnect_config/">
+        <id>http://localhost:4000/post/reconnect_config/</id>
+        <link href="http://localhost:4000/post/reconnect_config/">
         </link>
         <updated>2020-06-24T10:05:26.000Z</updated>
         <summary type="html"><![CDATA[<p>每次项目上线前都必然会确认下数据库，redis 的断线重连机制，由于事关重大，每次都要查询资料，浪费了很多时间。这次查询后在这里记录一下，作为一个检查表，避免下次再麻烦。</p>
@@ -236,8 +288,8 @@
     </entry>
     <entry>
         <title type="html"><![CDATA[说说 ThreadLocal]]></title>
-        <id>https://beyondpn.github.io/post/threadlocal/</id>
-        <link href="https://beyondpn.github.io/post/threadlocal/">
+        <id>http://localhost:4000/post/threadlocal/</id>
+        <link href="http://localhost:4000/post/threadlocal/">
         </link>
         <updated>2020-04-26T12:46:39.000Z</updated>
         <summary type="html"><![CDATA[<p>按照编码建议将 ThreadLocal 对象声明为 <code>static</code> 的，正常使用 ThreadLocal 即可.</p>
@@ -328,8 +380,8 @@
     </entry>
     <entry>
         <title type="html"><![CDATA[改 5 个字符修了一个 bug]]></title>
-        <id>https://beyondpn.github.io/post/fix-a-bug-within-five-char/</id>
-        <link href="https://beyondpn.github.io/post/fix-a-bug-within-five-char/">
+        <id>http://localhost:4000/post/fix-a-bug-within-five-char/</id>
+        <link href="http://localhost:4000/post/fix-a-bug-within-five-char/">
         </link>
         <updated>2016-11-25T16:50:54.000Z</updated>
         <summary type="html"><![CDATA[<p>切记不要简单的望文生义。</p>
@@ -378,8 +430,8 @@ public Queue getMessageQueue() {
     </entry>
     <entry>
         <title type="html"><![CDATA[也谈谈医疗改革]]></title>
-        <id>https://beyondpn.github.io/post/health-care/</id>
-        <link href="https://beyondpn.github.io/post/health-care/">
+        <id>http://localhost:4000/post/health-care/</id>
+        <link href="http://localhost:4000/post/health-care/">
         </link>
         <updated>2016-10-26T11:59:48.000Z</updated>
         <summary type="html"><![CDATA[<p>毒瘤要切掉，最终解决问题还是得技术进步。</p>
@@ -410,8 +462,8 @@ public Queue getMessageQueue() {
     </entry>
     <entry>
         <title type="html"><![CDATA[HashMap 和 ArrayList 有什么区别？兼谈面试题的选择]]></title>
-        <id>https://beyondpn.github.io/post/the-difference-between-hashmap-and-arraylist/</id>
-        <link href="https://beyondpn.github.io/post/the-difference-between-hashmap-and-arraylist/">
+        <id>http://localhost:4000/post/the-difference-between-hashmap-and-arraylist/</id>
+        <link href="http://localhost:4000/post/the-difference-between-hashmap-and-arraylist/">
         </link>
         <updated>2016-08-23T16:00:00.000Z</updated>
         <summary type="html"><![CDATA[<p>面试不是为了考到别人，是为了找到我们需要的人，面试官也要换位思考。</p>
